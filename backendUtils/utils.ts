@@ -2,6 +2,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "node:path"
 import sha256 from "crypto-js/sha256";
+import prisma from "./dbAccess";
 
 async function scrapeFirstNames() {
     const URL = "https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt&downloadcode=yes";
@@ -49,11 +50,35 @@ async function createRainbowTable() {
     const LAST_NAME_PATH = path.resolve(__dirname, "lastNames.json");
     const firstNames = JSON.parse(fs.readFileSync(FIRST_NAME_PATH, 'utf-8'))['firstNames']
     const lastNames = JSON.parse(fs.readFileSync(LAST_NAME_PATH, 'utf-8'))['lastNames']
+    let dataToWrite: {hash: string, name: string}[] = []
+    let counter = 0;
+    let BATCH_SIZE = 1e5;
     for (const firstName of firstNames) {
         for (const lastName of lastNames) {
-            const hash = sha256(`${firstName.toLowerCase()} ${lastName.toLowerCase()}`).toString()
+            const fullName = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`
+            const hash = sha256(fullName).toString()
+            dataToWrite.push({
+                hash: hash, 
+                name: fullName
+            })
+            counter += 1
+            if (counter == BATCH_SIZE) {
+                counter = 0
+                prisma.rainbowTable.createMany({
+                    data: dataToWrite,
+                    skipDuplicates: true
+                })
+                dataToWrite = []
+            }
         }
     }
+    // Tail end of DB write (since counter is probably not perfectly divisible by BATCH_SIZE)
+    prisma.rainbowTable.createMany({
+        data: dataToWrite,
+        skipDuplicates: true
+    })
 }
 
-createRainbowTable()
+createRainbowTable().finally(async () => {
+    await prisma.$disconnect();
+})
