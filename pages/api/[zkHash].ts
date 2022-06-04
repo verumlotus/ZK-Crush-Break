@@ -16,7 +16,7 @@ export default async function hashToMap(req: NextApiRequest, res: NextApiRespons
   });
 
   if (!dbData) {
-    return res.send({"name": "Couldn't find it in our Rainbow Table :("})
+    return res.send({"name": "Couldn't find it in our Rainbow Table!"})
   }
 
   return res.send({"name": dbData.name})
