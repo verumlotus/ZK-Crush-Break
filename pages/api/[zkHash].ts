@@ -7,7 +7,7 @@ type Data = {
 }
 
 export default async function hashToMap(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const {zkHash = ""} = req.query
+  const {zkHash = ""} = req.query 
 
   let dbData = await prisma.rainbowTable.findFirst({
     where: {
