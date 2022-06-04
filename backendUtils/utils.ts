@@ -1,6 +1,7 @@
 import axios from "axios";
 import fs from "fs";
 import path from "node:path"
+import sha256 from "crypto-js/sha256";
 
 async function scrapeFirstNames() {
     const URL = "https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt&downloadcode=yes";
@@ -17,7 +18,7 @@ async function scrapeFirstNames() {
     const dataToWrite = {
         "firstNames": firstNames
     }
-    fs.writeFileSync(FILE_PATH, JSON.stringify(dataToWrite))
+    fs.writeFileSync(FILE_PATH, JSON.stringify(dataToWrite), 'utf-8')
 }
 
 async function scrapeLastNames() {
@@ -40,7 +41,19 @@ async function scrapeLastNames() {
     const dataToWrite = {
         "lastNames": lastNames
     }
-    fs.writeFileSync(FILE_PATH, JSON.stringify(dataToWrite))  
+    fs.writeFileSync(FILE_PATH, JSON.stringify(dataToWrite), 'utf-8')  
 }
 
-scrapeLastNames()
+async function createRainbowTable() {
+    const FIRST_NAME_PATH = path.resolve(__dirname, "firstNames.json");
+    const LAST_NAME_PATH = path.resolve(__dirname, "lastNames.json");
+    const firstNames = JSON.parse(fs.readFileSync(FIRST_NAME_PATH, 'utf-8'))['firstNames']
+    const lastNames = JSON.parse(fs.readFileSync(LAST_NAME_PATH, 'utf-8'))['lastNames']
+    for (const firstName of firstNames) {
+        for (const lastName of lastNames) {
+            const hash = sha256(`${firstName.toLowerCase()} ${lastName.toLowerCase()}`).toString()
+        }
+    }
+}
+
+createRainbowTable()
